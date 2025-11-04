@@ -1,4 +1,8 @@
 <?php
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 60d940c43ebc4bd1c9d258cad223d56077a4b21e
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 /**

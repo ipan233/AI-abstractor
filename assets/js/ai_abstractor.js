@@ -1,5 +1,26 @@
 console.log("\n %c Cat-Abstract-AI (Forked from Post-Abstract-AI) 开源博客文章摘要AI生成工具 %c https://github.com/zkeq/Cat-Abstract-AI \n", "color: #fadfa3; background: #030307; padding:5px 0;", "background: #fadfa3; padding:5px 0;")
 
+// 默认配置
+const AIAbstractorConfig = {
+  appName: "AI摘要工具", // 应用名称，用于UI显示和控制台输出
+  classNamePrefix: "ai-abstractor", // 用于生成HTML元素的类名和ID前缀
+  apiEndpoint: "/action/ai-abstractor", // 默认API端点（Typecho 插件 Action）
+  apiKey: "", // 默认API Key为空，需要用户自行配置（前端不再直接使用）
+  postSelector: "#article-container", // 文章内容的CSS选择器（默认按照需求修改）
+  wordLimit: 720, // 摘要的字数限制
+  postURL: undefined, // 匹配文章URL的规则，undefined表示不限制
+  model: "gpt-4o-mini" // 供后端参考，前端只作透传
+};
+
+// 允许由后台（Typecho 插件）注入覆盖配置
+if (typeof window !== 'undefined' && window.AIAbstractorConfigOverrides) {
+  try {
+    Object.assign(AIAbstractorConfig, window.AIAbstractorConfigOverrides);
+  } catch (e) {
+    console.warn("AI摘要工具：合并后台配置失败", e);
+  }
+}
+
 // 1. 读取文章已有的描述
 // 2. 增加按钮 AI 描述
 
@@ -114,71 +135,57 @@ var AIAbstractor = {
   
   fetchAPI: async function(content) {
 
-    content = "生成30字以内的摘要供读者阅读,不要带“生成的摘要如下”这样的问候信息,我给你的文章内容是:" + content
-    const apiProxyUrl = AIAbstractorConfig.apiProxyUrl; // 使用配置的API代理端点
+    const prompt = "生成30字以内的摘要供读者阅读,不要带“生成的摘要如下”这样的问候信息,我给你的文章内容是:" + content
+    const apiUrl = AIAbstractorConfig.apiEndpoint; // 使用配置的API端点
 
-    if (!apiProxyUrl) {
-      console.error(`${AIAbstractorConfig.appName}错误：API代理端点未配置。`);
-      document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败：API代理端点未配置。';
+    if (!apiUrl) {
+      console.error(`${AIAbstractorConfig.appName}错误：API端点未配置。`);
+      document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败：API端点未配置。';
       return;
     }
     
     document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '生成中...' + '<span class="blinking-cursor"></span>';
 
     try {
-        StreamAIAbstractorFetchWait = true;
+      StreamAIAbstractorFetchWait = true;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ q: prompt, model: AIAbstractorConfig.model })
+      });
 
-        const response = await fetch(apiProxyUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `action=AIAbstractor&postContent=${encodeURIComponent(content)}&wordLimit=${AIAbstractorConfig.wordLimit}`
-        });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+      const data = await response.json();
+      const text = (data && (data.text || data.message || data.content)) ? (data.text || data.message || data.content) : '';
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let result = '';
-        const explanationElement = document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`);
-        explanationElement.innerHTML = ''; // Clear "生成中..."
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                break;
-            }
-            const chunk = decoder.decode(value, { stream: true });
-            result += chunk;
-            // 解析并处理流式数据，假设服务器返回的是 SSE 格式
-            // 这里需要根据后端实际返回的数据格式进行调整
-            // 如果后端返回的是原始文本流，可以直接追加
-            // 如果后端返回的是 SSE 格式，需要解析 event.data
-
-            // 假设后端直接返回文本流
-            explanationElement.innerHTML = result + '<span class="blinking-cursor"></span>';
-        }
-        // 去除光标
-        document.querySelector('.blinking-cursor').remove();
-        StreamAIAbstractorFetchWait = false;
+      if (text) {
+        const cursor = document.querySelector('.blinking-cursor');
+        if (cursor) cursor.remove();
+        document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerText = text;
+      } else {
+        throw new Error('Empty response');
+      }
 
     } catch (error) {
-        StreamAIAbstractorFetchWait = false;
-        if (error.name === 'AbortError') {
-            if (window.location.hostname === 'localhost') {
-                console.warn('警告：请勿在本地主机上测试 API 密钥。');
-                document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。请勿在本地主机上测试 API 密钥。';
-            } else {
-                console.error('请求超时');
-                document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。当你出现这个问题时，可能是key或者绑定的域名不正确。也可能是因为文章过长导致的 AI 运算量过大，您可以稍等一下然后刷新页面重试。';
-            }
+      if (error.name === 'AbortError') {
+        if (window.location.hostname === 'localhost') {
+          console.warn('警告：请勿在本地主机上测试 API 密钥。');
+          document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。请勿在本地主机上测试 API 密钥。';
         } else {
-            console.error('请求失败：', error);
-            document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败，请稍后再试。';
+          console.error('请求超时');
+          document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。当你出现这个问题时，可能是key或者绑定的域名不正确。也可能是因为文章过长导致的 AI 运算量过大，您可以稍等一下然后刷新页面重试。';
         }
+      } else {
+        console.error('请求失败：', error);
+        document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败，请稍后再试。';
+      }
+    } finally {
+      StreamAIAbstractorFetchWait = false;
     }
   }
 }

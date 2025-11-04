@@ -120,8 +120,9 @@ class AIAbstractor_Plugin implements Typecho_Plugin_Interface
 
         // 检查是否需要加载CSS和JS
         if (self::shouldLoadResources($options->postURL)) {
-            // 输出CSS文件
-            echo '<link rel="stylesheet" href="' . Typecho_Common::url('assets/css/ai_abstractor.css', __TYPECHO_PLUGIN_URL__ . '/AIAbstractor') . '">';
+			// 输出CSS文件
+			$pluginUrl = Helper::options()->pluginUrl . '/AIAbstractor';
+			echo '<link rel="stylesheet" href="' . Typecho_Common::url('assets/css/ai_abstractor.css', $pluginUrl) . '">';
 
             // 输出AIAbstractorConfig配置 (必须在JS文件之前)
             echo '<script type="text/javascript">';
@@ -146,8 +147,9 @@ class AIAbstractor_Plugin implements Typecho_Plugin_Interface
         $options = Typecho_Widget::widget('Widget_Options')->plugin('AIAbstractor');
         // 检查是否需要加载CSS和JS
         if (self::shouldLoadResources($options->postURL)) {
-            // 输出JS文件
-            echo '<script type="text/javascript" src="' . Typecho_Common::url('assets/js/ai_abstractor.js', __TYPECHO_PLUGIN_URL__ . '/AIAbstractor') . '"></script>';
+			// 输出JS文件
+			$pluginUrl = Helper::options()->pluginUrl . '/AIAbstractor';
+			echo '<script type="text/javascript" src="' . Typecho_Common::url('assets/js/ai_abstractor.js', $pluginUrl) . '"></script>';
         }
     }
 

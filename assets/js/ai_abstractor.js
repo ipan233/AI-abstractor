@@ -1,21 +1,23 @@
 console.log("\n %c Cat-Abstract-AI (Forked from Post-Abstract-AI) 开源博客文章摘要AI生成工具 %c https://github.com/zkeq/Cat-Abstract-AI \n", "color: #fadfa3; background: #030307; padding:5px 0;", "background: #fadfa3; padding:5px 0;")
 
-// 默认配置
-const AIAbstractorConfig = {
-  appName: "AI摘要工具", // 应用名称，用于UI显示和控制台输出
-  classNamePrefix: "ai-abstractor", // 用于生成HTML元素的类名和ID前缀
-  apiEndpoint: "/action/ai-abstractor", // 默认API端点（Typecho 插件 Action）
-  apiKey: "", // 默认API Key为空，需要用户自行配置（前端不再直接使用）
-  postSelector: "#article-container", // 文章内容的CSS选择器（默认按照需求修改）
-  wordLimit: 720, // 摘要的字数限制
-  postURL: undefined, // 匹配文章URL的规则，undefined表示不限制
-  model: "gpt-4o-mini" // 供后端参考，前端只作透传
-};
+// 默认配置（仅挂到 window，避免重复声明冲突）
+if (!window.AIAbstractorConfig) {
+  window.AIAbstractorConfig = {
+    appName: "AI摘要工具",
+    classNamePrefix: "ai-abstractor",
+    apiEndpoint: "/action/ai-abstractor",
+    apiKey: "",
+    postSelector: "#article-container",
+    wordLimit: 720,
+    postURL: undefined,
+    model: "gpt-4o-mini"
+  };
+}
 
 // 允许由后台（Typecho 插件）注入覆盖配置
 if (typeof window !== 'undefined' && window.AIAbstractorConfigOverrides) {
   try {
-    Object.assign(AIAbstractorConfig, window.AIAbstractorConfigOverrides);
+    Object.assign(window.AIAbstractorConfig, window.AIAbstractorConfigOverrides);
   } catch (e) {
     console.warn("AI摘要工具：合并后台配置失败", e);
   }
@@ -24,7 +26,10 @@ if (typeof window !== 'undefined' && window.AIAbstractorConfigOverrides) {
 // 1. 读取文章已有的描述
 // 2. 增加按钮 AI 描述
 
-let StreamAIAbstractorFetchWait = false;
+// 避免重复声明
+if (typeof window.StreamAIAbstractorFetchWait === 'undefined') {
+  window.StreamAIAbstractorFetchWait = false;
+}
 
 function insertAIDiv(selector) {
   // 首先移除现有的 "post-TianliGPT" 类元素（如果有的话）
@@ -40,14 +45,14 @@ function insertAIDiv(selector) {
 
   // 创建要插入的HTML元素
   const aiDiv = document.createElement('div');
-  aiDiv.className = `post-${AIAbstractorConfig.classNamePrefix}`;
+  aiDiv.className = `post-${window.AIAbstractorConfig.classNamePrefix}`;
 
   const aiTitleDiv = document.createElement('div');
-  aiTitleDiv.className = `${AIAbstractorConfig.classNamePrefix}-title`;
+  aiTitleDiv.className = `${window.AIAbstractorConfig.classNamePrefix}-title`;
   aiDiv.appendChild(aiTitleDiv);
 
   const aiIcon = document.createElement('i');
-  aiIcon.className = `${AIAbstractorConfig.classNamePrefix}-title-icon`;
+  aiIcon.className = `${window.AIAbstractorConfig.classNamePrefix}-title-icon`;
   aiTitleDiv.appendChild(aiIcon);
 
   // 插入 SVG 图标
@@ -59,28 +64,28 @@ function insertAIDiv(selector) {
   </svg>`
 
   const aiTitleTextDiv = document.createElement('div');
-  aiTitleTextDiv.className = `${AIAbstractorConfig.classNamePrefix}-title-text`;
-  aiTitleTextDiv.textContent = AIAbstractorConfig.appName;
+  aiTitleTextDiv.className = `${window.AIAbstractorConfig.classNamePrefix}-title-text`;
+  aiTitleTextDiv.textContent = window.AIAbstractorConfig.appName;
   aiTitleDiv.appendChild(aiTitleTextDiv);
 
   const aiToggleDiv = document.createElement('div');
-  aiToggleDiv.id = `${AIAbstractorConfig.classNamePrefix}-Toggle`;
+  aiToggleDiv.id = `${window.AIAbstractorConfig.classNamePrefix}-Toggle`;
   aiToggleDiv.textContent = '切换';
   // 点击时触发 runAIAbstractor 函数
   aiToggleDiv.addEventListener('click', runAIAbstractor);
   aiTitleDiv.appendChild(aiToggleDiv);
 
   const aiTagDiv = document.createElement('div');
-  aiTagDiv.className = `${AIAbstractorConfig.classNamePrefix}-tag`;
-  aiTagDiv.id = `${AIAbstractorConfig.classNamePrefix}-tag`;
-  aiTagDiv.textContent = `CatGPT - ${AIAbstractorConfig.appName}(1)`;
+  aiTagDiv.className = `${window.AIAbstractorConfig.classNamePrefix}-tag`;
+  aiTagDiv.id = `${window.AIAbstractorConfig.classNamePrefix}-tag`;
+  aiTagDiv.textContent = `CatGPT - ${window.AIAbstractorConfig.appName}(1)`;
   aiTagDiv.addEventListener('click', () => {
     window.open('https://catgpt.miaorun.dev/', '_blank');
   });
   aiTitleDiv.appendChild(aiTagDiv);
 
   const aiExplanationDiv = document.createElement('div');
-  aiExplanationDiv.className = `${AIAbstractorConfig.classNamePrefix}-explanation`;
+  aiExplanationDiv.className = `${window.AIAbstractorConfig.classNamePrefix}-explanation`;
   aiExplanationDiv.innerHTML = '生成中...' + '<span class="blinking-cursor"></span>';
   aiDiv.appendChild(aiExplanationDiv); // 将 AI摘要工具-explanation 插入到 aiDiv，而不是 aiTitleDiv
 
@@ -90,7 +95,7 @@ function insertAIDiv(selector) {
 
 function removeExistingAIDiv() {
   // 查找具有 "post-TianliGPT" 类的元素
-  const existingAIDiv = document.querySelector(`.post-${AIAbstractorConfig.classNamePrefix}`);
+  const existingAIDiv = document.querySelector(`.post-${window.AIAbstractorConfig.classNamePrefix}`);
 
   // 如果找到了这个元素，就从其父元素中删除它
   if (existingAIDiv) {
@@ -103,9 +108,9 @@ var AIAbstractor = {
   getTitleAndContent: function() {
     try {
       const title = document.title;
-      const container = document.querySelector(AIAbstractorConfig.postSelector);
+      const container = document.querySelector(window.AIAbstractorConfig.postSelector);
       if (!container) {
-        console.warn(`${AIAbstractorConfig.appName}：找不到文章容器。请尝试将引入的代码放入到文章容器之后。如果本身没有打算使用摘要功能可以忽略此提示。`);
+        console.warn(`${window.AIAbstractorConfig.appName}：找不到文章容器。请尝试将引入的代码放入到文章容器之后。如果本身没有打算使用摘要功能可以忽略此提示。`);
         return '';
       }
       const paragraphs = container.getElementsByTagName('p');
@@ -123,12 +128,12 @@ var AIAbstractor = {
       }
   
       const combinedText = title + ' ' + content;
-      let wordLimit = AIAbstractorConfig.wordLimit;
+      let wordLimit = window.AIAbstractorConfig.wordLimit;
       // 旧的全局变量兼容代码已移除
       const truncatedText = combinedText.substring(0, wordLimit).split('|&|').slice(0, -1).join(' ');
       return truncatedText;
     } catch (e) {
-      console.error(`${AIAbstractorConfig.appName}错误：可能由于一个或多个错误导致没有正常运行，原因出在获取文章容器中的内容失败，或者可能是在文章转换过程中失败。`, e);
+      console.error(`${window.AIAbstractorConfig.appName}错误：可能由于一个或多个错误导致没有正常运行，原因出在获取文章容器中的内容失败，或者可能是在文章转换过程中失败。`, e);
       return '';
     }
   },
@@ -136,24 +141,24 @@ var AIAbstractor = {
   fetchAPI: async function(content) {
 
     const prompt = "生成30字以内的摘要供读者阅读,不要带“生成的摘要如下”这样的问候信息,我给你的文章内容是:" + content
-    const apiUrl = AIAbstractorConfig.apiEndpoint; // 使用配置的API端点
+    const apiUrl = window.AIAbstractorConfig.apiEndpoint; // 使用配置的API端点
 
     if (!apiUrl) {
-      console.error(`${AIAbstractorConfig.appName}错误：API端点未配置。`);
-      document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败：API端点未配置。';
+      console.error(`${window.AIAbstractorConfig.appName}错误：API端点未配置。`);
+      document.querySelector(`.${window.AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败：API端点未配置。';
       return;
     }
     
-    document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '生成中...' + '<span class="blinking-cursor"></span>';
+    document.querySelector(`.${window.AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '生成中...' + '<span class="blinking-cursor"></span>';
 
     try {
-      StreamAIAbstractorFetchWait = true;
+      window.StreamAIAbstractorFetchWait = true;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ q: prompt, model: AIAbstractorConfig.model })
+        body: JSON.stringify({ q: prompt, model: window.AIAbstractorConfig.model })
       });
 
       if (!response.ok) {
@@ -166,7 +171,7 @@ var AIAbstractor = {
       if (text) {
         const cursor = document.querySelector('.blinking-cursor');
         if (cursor) cursor.remove();
-        document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerText = text;
+        document.querySelector(`.${window.AIAbstractorConfig.classNamePrefix}-explanation`).innerText = text;
       } else {
         throw new Error('Empty response');
       }
@@ -175,29 +180,29 @@ var AIAbstractor = {
       if (error.name === 'AbortError') {
         if (window.location.hostname === 'localhost') {
           console.warn('警告：请勿在本地主机上测试 API 密钥。');
-          document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。请勿在本地主机上测试 API 密钥。';
+          document.querySelector(`.${window.AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。请勿在本地主机上测试 API 密钥。';
         } else {
           console.error('请求超时');
-          document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。当你出现这个问题时，可能是key或者绑定的域名不正确。也可能是因为文章过长导致的 AI 运算量过大，您可以稍等一下然后刷新页面重试。';
+          document.querySelector(`.${window.AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要超时。当你出现这个问题时，可能是key或者绑定的域名不正确。也可能是因为文章过长导致的 AI 运算量过大，您可以稍等一下然后刷新页面重试。';
         }
       } else {
         console.error('请求失败：', error);
-        document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败，请稍后再试。';
+        document.querySelector(`.${window.AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = '获取文章摘要失败，请稍后再试。';
       }
     } finally {
-      StreamAIAbstractorFetchWait = false;
+      window.StreamAIAbstractorFetchWait = false;
     }
   }
 }
 
 function runAIAbstractor() {
-  if (StreamAIAbstractorFetchWait){
-    console.log(`${AIAbstractorConfig.appName}：正在等待上一次请求的返回结果，本次请求将被忽略。`);
+  if (window.StreamAIAbstractorFetchWait){
+    console.log(`${window.AIAbstractorConfig.appName}：正在等待上一次请求的返回结果，本次请求将被忽略。`);
     return;
   }
   const content = AIAbstractor.getTitleAndContent();
   if (content && content !== '') {
-    console.log(`${AIAbstractorConfig.appName}本次提交的内容为：` + content);
+    console.log(`${window.AIAbstractorConfig.appName}本次提交的内容为：` + content);
   }else{
     return;
   }
@@ -205,7 +210,7 @@ function runAIAbstractor() {
 }
 
 function checkURLAndRun() {
-  if (typeof AIAbstractorConfig.postURL === "undefined") { // 使用配置的URL规则
+  if (typeof window.AIAbstractorConfig.postURL === "undefined") { // 使用配置的URL规则
     initRun(); // 如果没有设置自定义 URL，则直接执行 initRun() 函数
     return;
   }
@@ -219,28 +224,28 @@ function checkURLAndRun() {
       return s.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
     };
 
-    const urlPattern = wildcardToRegExp(AIAbstractorConfig.postURL);
+    const urlPattern = wildcardToRegExp(window.AIAbstractorConfig.postURL);
     const currentURL = window.location.href;
 
     if (urlPattern.test(currentURL)) {
       initRun(); // 如果当前 URL 符合用户设置的 URL，则执行 initRun() 函数
     } else {
-      console.log(`${AIAbstractorConfig.appName}：因为不符合自定义的链接规则，我决定不执行摘要功能。`);
+      console.log(`${window.AIAbstractorConfig.appName}：因为不符合自定义的链接规则，我决定不执行摘要功能。`);
     }
   } catch (error) {
-    console.error(`${AIAbstractorConfig.appName}：我没有看懂你编写的自定义链接规则，所以我决定不执行摘要功能`, error);
+    console.error(`${window.AIAbstractorConfig.appName}：我没有看懂你编写的自定义链接规则，所以我决定不执行摘要功能`, error);
   }
 }
 
 function fillDescriptionContent() {
   let descriptionElement = document.querySelector('meta[name="description"]');
   if (descriptionElement) {
-    document.querySelector(`.${AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = descriptionElement.content;
+    document.querySelector(`.${window.AIAbstractorConfig.classNamePrefix}-explanation`).innerHTML = descriptionElement.content;
   }
 }
 
 function initRun() {
-  insertAIDiv(AIAbstractorConfig.postSelector); // 使用配置的文章选择器
+  insertAIDiv(window.AIAbstractorConfig.postSelector); // 使用配置的文章选择器
   fillDescriptionContent();
 }
 

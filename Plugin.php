@@ -90,6 +90,7 @@ class AIAbstractor_Plugin implements Typecho_Plugin_Interface
     {
         $options = Helper::options();
         $pluginUrl = rtrim($options->pluginUrl, '/') . '/AIAbstractor';
+        $css = $pluginUrl . '/assets/css/ai_abstractor.css';
         $js = $pluginUrl . '/assets/js/ai_abstractor.js';
         $settings = Helper::options()->plugin('AIAbstractor');
         if (!isset($settings->autoInject) || $settings->autoInject !== '1') {
@@ -103,6 +104,8 @@ class AIAbstractor_Plugin implements Typecho_Plugin_Interface
             'wordLimit' => isset($settings->wordLimit) ? intval($settings->wordLimit) : 720
         );
 
+        // 兜底：若主题未调用 $this->header()，在 footer 也注入 CSS，避免无样式
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($css) . '">';
         echo '<script>window.AIAbstractorConfigOverrides=' . json_encode($inject, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';</script>';
         echo '<script src="' . htmlspecialchars($js) . '"></script>';
     }

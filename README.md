@@ -1,4 +1,4 @@
-# ✅ **AIAbstractor – 基于 OpenAI 的 Typecho 文章摘要插件**
+# 🎉 **AIAbstractor – 基于 OpenAI 的 Typecho 文章摘要插件**🎉 
 
 感谢[@zhheo](https://github.com/zhheo/Post-Abstract-AI)的原始代码！很喜欢原版的这个AI摘要UI，所以想着移植到typecho博客上来。
 
@@ -7,13 +7,10 @@ AIAbstractor 是一款为 **Typecho 博客系统** 开发的智能文章摘要�
 
 插件已适配：
 
-✅ Typecho 1.1
-
-✅ Typecho 1.2 - 1.2.1
-
-✅ 宝塔 / Nginx / open_basedir 限制环境
-
-✅ 不依赖 PATH_INFO（兼容所有服务器）
+* ✅ Typecho 1.1
+* ✅ Typecho 1.2 - 1.2.1
+* ✅ 宝塔 / Nginx / open_basedir 限制环境
+* ✅ 不依赖 PATH_INFO（兼容所有服务器）
 
 ---
 
@@ -31,7 +28,7 @@ AIAbstractor 是一款为 **Typecho 博客系统** 开发的智能文章摘要�
 
 ---
 
-# 📥 **安装方法**
+# 📥 **安装和使用方法**
 
 1. 下载插件代码，将文件夹命名为：
 
@@ -39,13 +36,13 @@ AIAbstractor 是一款为 **Typecho 博客系统** 开发的智能文章摘要�
 AIAbstractor
 ```
 
-路径结构应为：
+2. 把文件夹上传到如下路径：
 
 ```
-/usr/plugins/AIAbstractor/
+/你的博客根目录/usr/plugins/
 ```
 
-2. 插件目录应包含：
+  插件目录应包含：
 
 ```
 AIAbstractor/
@@ -85,20 +82,6 @@ AIAbstractor/
 
 ---
 
-# 🚀 **使用方法**
-
-启用插件后，访客在阅读文章页面时，会看到一个「AI 摘要」按钮。
-
-点击后：
-
-* 插件前端会提取正文内容
-* 通过 `api.php` POST 请求发送到你的服务器
-* 你的服务器再转发到 OpenAI API
-* 返回生成好的摘要并显示在页面中
-
-无需额外配置主题，也不需要修改模板文件。
-
----
 
 # 🔌 **API 说明（服务器端）**
 
@@ -142,16 +125,6 @@ POST /usr/plugins/AIAbstractor/api.php
 
 ---
 
-# 🧱 **文件结构说明**
-
-| 文件                           | 作用                       |
-| ---------------------------- | ------------------------ |
-| Plugin.php                   | Typecho 插件主文件            |
-| api.php                      | 后端 OpenAI 代理（不依赖 Action） |
-| assets/js/ai_abstractor.js   | 前端主逻辑                    |
-| assets/css/ai_abstractor.css | 按钮样式                     |
-
----
 
 # 🩺 **常见问题 FAQ**
 

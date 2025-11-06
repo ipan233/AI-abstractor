@@ -8,8 +8,11 @@ AIAbstractor 是一款为 **Typecho 博客系统** 开发的智能文章摘要�
 插件已适配：
 
 ✅ Typecho 1.1
+
 ✅ Typecho 1.2 - 1.2.1
+
 ✅ 宝塔 / Nginx / open_basedir 限制环境
+
 ✅ 不依赖 PATH_INFO（兼容所有服务器）
 
 ---

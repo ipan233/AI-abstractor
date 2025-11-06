@@ -3,7 +3,7 @@ console.log("\n %c AIAbstractor (Forked from Post-Abstract-AI) 开源博客文�
 // 默认配置（仅挂到 window，避免重复声明冲突）
 if (!window.AIAbstractorConfig) {
   window.AIAbstractorConfig = {
-    appName: "AI摘要工具",
+    appName: "AI摘要",
     classNamePrefix: "ai-abstractor",
     apiEndpoint: "/action/ai-abstractor",
     apiKey: "",
@@ -79,7 +79,7 @@ function insertAIDiv(selector) {
   const aiTagDiv = document.createElement('div');
   aiTagDiv.className = `${window.AIAbstractorConfig.classNamePrefix}-tag`;
   aiTagDiv.id = `${window.AIAbstractorConfig.classNamePrefix}-tag`;
-  aiTagDiv.textContent = `${window.AIAbstractorConfig.appName}`;
+  aiTagDiv.textContent = '项目地址';
   aiTagDiv.addEventListener('click', () => {
     window.open('https://github.com/ipan233/AIAbstractor', '_blank');
   });

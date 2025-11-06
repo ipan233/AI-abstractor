@@ -5,9 +5,9 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * AIAbstractor - 基于 OpenAI 标准接口的文章摘要插件
  * 
  * @package AIAbstractor
- * @author Your Name
- * @version 1.0.0
- * @link https://github.com/your/repo
+ * @author ipan233
+ * @version 1.0.1
+ * @link https://github.com/ipan233/AIAbstractor
  */
 
 class AIAbstractor_Plugin implements Typecho_Plugin_Interface

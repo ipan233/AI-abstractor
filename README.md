@@ -1,4 +1,4 @@
-# 🎉 **AIAbstractor – 基于 OpenAI 的 Typecho 文章摘要插件**🎉 
+# 🎉 **AIAbstractor – 基于 OpenAI 的 Typecho 文章摘要插件**
 
 感谢[@zhheo](https://github.com/zhheo/Post-Abstract-AI)的原始代码！很喜欢原版的这个AI摘要UI，所以想着移植到typecho博客上来。
 
